@@ -32,22 +32,16 @@ const styles = {
 export default async function Subjects({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
+    const data = await fetch(`${process.env.API_URL}/site/helpers/subjects?id=${id}`)
+    const subjectsResponse = await data.json();
+    const lessons = subjectsResponse?.data?.data[0]?.lessons;
 
-    console.log("PARAMS ID", id);
-
-    const lessons = [
-        { id: 1, name: 'Addition' },
-        { id: 2, name: 'Subtraction' },
-        { id: 3, name: 'Multiplication' },
-        { id: 4, name: 'Division' },
-    ];
-
-    const lessonCards = lessons.map((lesson) => (
+    const lessonCards = lessons.map((lesson: { id: string; title: string }) => (
         <Card key={lesson.id}>
             <div style={styles.CardContent}>
                 <div style={styles.LeftSideContent}>
                     <UIImage styles={styles.CardImage} />
-                    <UITitle text={`Lesson ${lesson.id}: ${lesson.name}`} styles={styles.CardTitle} />
+                    <UITitle text={`${lesson.title}`} styles={styles.CardTitle} />
                 </div>
 
                 <UIButton

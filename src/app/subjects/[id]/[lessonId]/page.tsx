@@ -23,6 +23,7 @@ import UIImage from "@/components/UIImage";
 import UIButton from "@/components/UIButton";
 import Card from '@/components/Card';
 import UIText from '@/components/UIText';
+import { useParams } from 'next/navigation';
 
 const styles = {
     Screen: {
@@ -195,6 +196,9 @@ const SortableItem = ({ id, content }: { id: string; content: string }) => {
 };
 
 export default function LessonDetails() {
+    const {lessonId} = useParams()
+    console.log("lessonId", lessonId);
+    
     const [currentQuizType, setCurrentQuizType] = useState('multiple');
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
     const [orderItems, setOrderItems] = useState([
@@ -235,6 +239,15 @@ export default function LessonDetails() {
         setOrderingCorrect(null);
         setSelectedOption(null);
     }, [currentQuizType]);
+
+    useEffect(() => {
+        const fetchLessonData = async () => {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/site/lessons?id=${lessonId}`);
+            const lessonResponse = await response.json();
+            console.log("lessonResponse", lessonResponse);
+        }
+        fetchLessonData()
+    }, [lessonId])
 
     const multipleChoiceQuiz = (
         <div style={styles.quizContainer}>
