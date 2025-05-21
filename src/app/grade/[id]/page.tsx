@@ -9,7 +9,7 @@ export default async function page({ params }: { params: Promise<{ id: string }>
   // get id from params
   const { id } = await params;
 
-  const data = await fetch(`${process.env.API_URL}/site/helpers/grades?id=${id}`)
+  const data = await fetch(`${process.env.API_URL}/site/helpers/grades?id=${id}`, {cache: 'no-store'})
   const gradeResponse = await data.json();
   const subjects = gradeResponse?.data?.data[0]?.subjects;
 

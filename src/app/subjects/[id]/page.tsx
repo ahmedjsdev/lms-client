@@ -32,7 +32,7 @@ const styles = {
 export default async function Subjects({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    const data = await fetch(`${process.env.API_URL}/site/helpers/subjects?id=${id}`)
+    const data = await fetch(`${process.env.API_URL}/site/helpers/subjects?id=${id}`, { cache: 'no-store' })
     const subjectsResponse = await data.json();
     const lessons = subjectsResponse?.data?.data[0]?.lessons;
 
