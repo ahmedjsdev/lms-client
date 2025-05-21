@@ -170,7 +170,25 @@ const styles = {
         flexWrap: 'wrap',
         justifyContent: 'center',
     } as React.CSSProperties,
+    noQuizMessage: {
+        textAlign: 'center',
+        color: '#FF7F50',
+        fontSize: '20px',
+        fontWeight: 'bold',
+        marginTop: '20px',
+        padding: '15px',
+        backgroundColor: '#FFEBEE',
+        borderRadius: '10px',
+    } as React.CSSProperties,
 };
+
+interface Quiz {
+    id: number;
+    correct_answer: string[];
+    options: string[];
+    question: string[];
+    type: string;
+}
 
 const SortableItem = ({ id, content }: { id: string; content: string }) => {
     const {
@@ -196,11 +214,19 @@ const SortableItem = ({ id, content }: { id: string; content: string }) => {
 };
 
 export default function LessonDetails() {
-    const {lessonId} = useParams()
-    console.log("lessonId", lessonId);
-    
-    const [currentQuizType, setCurrentQuizType] = useState('multiple');
-    const [selectedOption, setSelectedOption] = useState<number | null>(null);
+    const { lessonId } = useParams()
+    const [lessonQuestions, setLessonQuestions] = useState([]);
+    const [selectedQuiz, setSelectedQuiz] = useState<null | Quiz>(null);
+    const [showNoQuiz, setShowNoQuiz] = useState(false);
+    const [lessonDetails, setLessonDetails] = useState<null | {
+        id: number;
+        title: string;
+        contents: {
+            content: string;
+        }[]
+    }>(null)
+
+    const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [orderItems, setOrderItems] = useState([
         { id: 'item-1', content: 'Evaporation' },
         { id: 'item-2', content: 'Condensation' },
@@ -238,44 +264,47 @@ export default function LessonDetails() {
         setTrueFalseCorrect(null);
         setOrderingCorrect(null);
         setSelectedOption(null);
-    }, [currentQuizType]);
+    }, [selectedQuiz]);
 
     useEffect(() => {
         const fetchLessonData = async () => {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/site/lessons?id=${lessonId}`);
             const lessonResponse = await response.json();
-            console.log("lessonResponse", lessonResponse);
+            setLessonQuestions(lessonResponse.data[0].test_questions);
+            console.log("lessonResponse.data[0]", lessonResponse.data[0]);
+            setLessonDetails(lessonResponse.data[0]);
+
+            if (lessonResponse.data[0].test_questions.length > 0) {
+                setSelectedQuiz(lessonResponse.data[0].test_questions[0]);
+            } else {
+                setShowNoQuiz(true)
+            }
         }
         fetchLessonData()
     }, [lessonId])
 
     const multipleChoiceQuiz = (
         <div style={styles.quizContainer}>
-            <UITitle text="Quiz: What is Precipitation?" />
-            {[
-                'Rain, snow, sleet, or hail that falls to the ground',
-                'The process of water turning into vapor',
-                'Water flowing into rivers and oceans',
-                'Water absorbed by plants'
-            ].map((option, index) => (
+            <UITitle text={`Quiz: ${selectedQuiz?.question[0]}`} />
+            {selectedQuiz?.options.map((option, index) => (
                 <button
                     key={index}
                     style={{
                         ...styles.quizOption,
-                        ...(selectedOption === index ? styles.selectedOption : {})
+                        ...(selectedOption === option ? styles.selectedOption : {})
                     }}
                     onClick={() => {
-                        setSelectedOption(index);
+                        setSelectedOption(option);
                         setMultipleChoiceCorrect(null); // Reset feedback when selecting new option
                     }}
                 >
                     {option}
                 </button>
             ))}
-            <UIButton 
+            <UIButton
                 label="Check Answer"
                 onClick={() => {
-                    if (selectedOption === 0) {
+                    if (selectedOption === selectedQuiz?.correct_answer[0]) {
                         setMultipleChoiceCorrect(true);
                     } else {
                         setMultipleChoiceCorrect(false);
@@ -300,7 +329,7 @@ export default function LessonDetails() {
                     backgroundColor: '#FFEBEE',
                     color: '#D32F2F'
                 }}>
-                    Try again! Think about what precipitation means.
+                    Try again! Think about what {selectedQuiz?.question[0]}.
                 </div>
             )}
         </div>
@@ -308,26 +337,26 @@ export default function LessonDetails() {
 
     const trueFalseQuiz = (
         <div style={styles.quizContainer}>
-            <UITitle text="True or False: Water vapor is invisible." />
-            {['True', 'False'].map((option, index) => (
+            <UITitle text={`True or False: ${selectedQuiz?.question[0]}`} />
+            {selectedQuiz?.options.map((option, index) => (
                 <button
                     key={index}
                     style={{
                         ...styles.quizOption,
-                        ...(selectedOption === index ? styles.selectedOption : {})
+                        ...(selectedOption === option ? styles.selectedOption : {})
                     }}
                     onClick={() => {
-                        setSelectedOption(index);
+                        setSelectedOption(option);
                         setTrueFalseCorrect(null); // Reset feedback when selecting new option
                     }}
                 >
                     {option}
                 </button>
             ))}
-            <UIButton 
+            <UIButton
                 label="Check Answer"
                 onClick={() => {
-                    if (selectedOption === 0) {
+                    if (selectedOption === selectedQuiz?.correct_answer[0]) {
                         setTrueFalseCorrect(true);
                     } else {
                         setTrueFalseCorrect(false);
@@ -343,7 +372,7 @@ export default function LessonDetails() {
             />
             {trueFalseCorrect === true && (
                 <div style={styles.successMessage}>
-                    Correct! Water vapor is indeed invisible! 🎉
+                    Correct! Well done! 🎉
                 </div>
             )}
             {trueFalseCorrect === false && (
@@ -352,7 +381,7 @@ export default function LessonDetails() {
                     backgroundColor: '#FFEBEE',
                     color: '#D32F2F'
                 }}>
-                    Try again! Think about whether you can see water vapor in the air.
+                    Try again! Think about {selectedQuiz?.question[0]}. 🤔
                 </div>
             )}
         </div>
@@ -375,12 +404,12 @@ export default function LessonDetails() {
                     ))}
                 </SortableContext>
             </DndContext>
-            <UIButton 
+            <UIButton
                 label="Check Order"
                 onClick={() => {
                     const correctOrder = ['Evaporation', 'Condensation', 'Precipitation', 'Collection'];
                     const currentOrder = orderItems.map(item => item.content);
-                    
+
                     if (JSON.stringify(currentOrder) === JSON.stringify(correctOrder)) {
                         setOrderingCorrect(true);
                     } else {
@@ -412,13 +441,7 @@ export default function LessonDetails() {
         </div>
     );
 
-    const [scrambledWord] = useState([
-        { id: 'c1', letter: 'C' },
-        { id: 'y1', letter: 'Y' },
-        { id: 'c2', letter: 'C' },
-        { id: 'l1', letter: 'L' },
-        { id: 'e1', letter: 'E' }
-    ]);
+    const [scrambledWord, setScrambledWord] = useState<{ id: string; letter: string }[]>([]);
     const [selectedLetters, setSelectedLetters] = useState<Array<{ id: string, letter: string }>>([]);
     const [isCorrect, setIsCorrect] = useState(false);
 
@@ -432,7 +455,7 @@ export default function LessonDetails() {
 
             // Check if word is complete and correct
             const newWord = [...selectedLetters, { id, letter }].map(item => item.letter).join('');
-            if (newWord === 'CYCLE') {
+            if (newWord === selectedQuiz?.correct_answer[0]) {
                 setIsCorrect(true);
             }
         }
@@ -440,11 +463,11 @@ export default function LessonDetails() {
 
     const wordScrambleQuiz = (
         <div style={styles.quizContainer}>
-            <UITitle text="Unscramble the word" />
+            <UITitle text={`Unscramble the word: ${selectedQuiz?.question[0]}`} />
 
             {/* Answer slots */}
             <div style={styles.answerContainer}>
-                {Array(5).fill(null).map((_, index) => (
+                {Array(selectedQuiz?.options.length).fill(null).map((_, index) => (
                     <div
                         key={`slot-${index}`}
                         style={{
@@ -477,25 +500,25 @@ export default function LessonDetails() {
 
             {isCorrect && (
                 <div style={styles.successMessage}>
-                    Correct! Well done! 🎉
+                    Correct! Well done! 🎉🤩
                 </div>
             )}
         </div>
     );
 
-    const [fillInBlanksAnswers, setFillInBlanksAnswers] = useState<string[]>(Array(3).fill(''));
+    const [fillInBlanksAnswers, setFillInBlanksAnswers] = useState<string[]>(Array(1).fill(''));
     const [fillInBlanksCorrect, setFillInBlanksCorrect] = useState<boolean | null>(null);
 
     const fillInBlanksQuiz = (
         <div style={styles.quizContainer}>
-            <UITitle text="Fill in the blanks about the Water Cycle" />
+            <UITitle text="Fill in the blanks" />
             <div style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '15px',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span>When water heats up, it turns into water vapor through</span>
+                    <span>{selectedQuiz?.question[0]}</span>
                     <input
                         type="text"
                         value={fillInBlanksAnswers[0]}
@@ -515,58 +538,14 @@ export default function LessonDetails() {
                     />
                     <span>.</span>
                 </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span>Water vapor cools and forms clouds through</span>
-                    <input
-                        type="text"
-                        value={fillInBlanksAnswers[1]}
-                        onChange={(e) => {
-                            const newAnswers = [...fillInBlanksAnswers];
-                            newAnswers[1] = e.target.value;
-                            setFillInBlanksAnswers(newAnswers);
-                            setFillInBlanksCorrect(null);
-                        }}
-                        style={{
-                            padding: '8px',
-                            borderRadius: '5px',
-                            border: '2px solid #FF7F50',
-                            width: '150px',
-                        }}
-                        placeholder="Type your answer"
-                    />
-                    <span>.</span>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span>Water falls from clouds as</span>
-                    <input
-                        type="text"
-                        value={fillInBlanksAnswers[2]}
-                        onChange={(e) => {
-                            const newAnswers = [...fillInBlanksAnswers];
-                            newAnswers[2] = e.target.value;
-                            setFillInBlanksAnswers(newAnswers);
-                            setFillInBlanksCorrect(null);
-                        }}
-                        style={{
-                            padding: '8px',
-                            borderRadius: '5px',
-                            border: '2px solid #FF7F50',
-                            width: '150px',
-                        }}
-                        placeholder="Type your answer"
-                    />
-                    <span>.</span>
-                </div>
             </div>
 
-            <UIButton 
+            <UIButton
                 label="Check Answers"
                 onClick={() => {
-                    const correctAnswers = ['evaporation', 'condensation', 'precipitation'];
-                    const isCorrect = fillInBlanksAnswers.every((answer, index) => 
-                        answer.toLowerCase().trim() === correctAnswers[index]
+                    const correctAnswers = selectedQuiz?.correct_answer[0].split(' ').map(answer => answer.toLowerCase().trim());
+                    const isCorrect = fillInBlanksAnswers.every((answer, index) =>
+                        answer.toLowerCase().trim() === correctAnswers?.[index]
                     );
                     setFillInBlanksCorrect(isCorrect);
                 }}
@@ -581,7 +560,7 @@ export default function LessonDetails() {
 
             {fillInBlanksCorrect === true && (
                 <div style={styles.successMessage}>
-                    Perfect! You understand the water cycle processes! 🎉
+                    Perfect! You understand the lesson! 🎉🤩
                 </div>
             )}
             {fillInBlanksCorrect === false && (
@@ -590,7 +569,7 @@ export default function LessonDetails() {
                     backgroundColor: '#FFEBEE',
                     color: '#D32F2F'
                 }}>
-                    Try again! Remember the three main processes: evaporation, condensation, and precipitation.
+                    Try again! 🥲
                 </div>
             )}
         </div>
@@ -607,9 +586,11 @@ export default function LessonDetails() {
 
             <div style={styles.layout}>
                 <Card>
-                    <UITitle text="The Water Cycle" />
-                    <UIText>
-                        The water cycle is the journey that water takes as it moves from the land to the sky and back again. It includes processes such as evaporation, condensation, and precipitation.
+                    <UITitle text={lessonDetails?.title || ''} />
+                    <UIText styles={{
+                        textAlign: 'center'
+                    }}>
+                        {lessonDetails?.contents[0].content}
                     </UIText>
                     <UIImage image='https://assets.api.uizard.io/api/cdn/stream/ec5b329d-63a9-4e12-8dba-7039198243e3.png'
                         styles={{
@@ -621,9 +602,103 @@ export default function LessonDetails() {
                 </Card>
 
                 <Card>
+                    {
+                        showNoQuiz && (
+                            <div style={styles.noQuizMessage}>
+                                No quiz available for this lesson.
+                            </div>
+                        )
+                    }
                     <div style={styles.quizButtonContainer}>
                         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                            <UIButton
+                            {
+                                lessonQuestions.map((question: Quiz) => {
+                                    switch (question.type) {
+                                        case "1": // multiple choice
+                                            return (
+                                                <UIButton
+                                                    key={question.id}
+                                                    label="Multiple Choice"
+                                                    onClick={() => setSelectedQuiz(question)}
+                                                    styles={{
+                                                        ...styles.backButton,
+                                                        backgroundColor: (selectedQuiz?.type === '1' && selectedQuiz?.id === question.id) ? '#FF7F50' : 'transparent',
+                                                        color: (selectedQuiz?.type === '1' && selectedQuiz?.id === question.id) ? 'white' : '#333',
+                                                    }}
+                                                />
+                                            )
+
+                                        case "2": // "True | False"
+                                            return (
+                                                <UIButton
+                                                    key={question.id}
+                                                    label="True/False"
+                                                    onClick={() => setSelectedQuiz(question)}
+                                                    styles={{
+                                                        ...styles.backButton,
+                                                        backgroundColor: (selectedQuiz?.type === '2' && selectedQuiz?.id === question.id) ? '#FF7F50' : 'transparent',
+                                                        color: (selectedQuiz?.type === '2' && selectedQuiz?.id === question.id) ? 'white' : '#333',
+                                                    }}
+                                                />
+                                            )
+
+                                        case "3": // "Ordering"
+                                            return (
+                                                <UIButton
+                                                    key={question.id}
+                                                    label="Ordering"
+                                                    onClick={() => setSelectedQuiz(question)}
+                                                    styles={{
+                                                        ...styles.backButton,
+                                                        backgroundColor: selectedQuiz?.type === '3' && selectedQuiz?.id === question.id ? '#FF7F50' : 'transparent',
+                                                        color: selectedQuiz?.type === '3' && selectedQuiz?.id === question.id ? 'white' : '#333',
+                                                    }}
+                                                />
+                                            )
+
+                                        case "4": // "Word Scramble"
+                                            return (
+                                                <UIButton
+                                                    key={question.id}
+                                                    label="Word Scramble"
+                                                    onClick={() => {
+                                                        setSelectedQuiz(question)
+                                                        const wordScrambleOptions = question.options.map((option, index) => {
+                                                            return {
+                                                                id: `option-${index}`,
+                                                                letter: option
+                                                            }
+                                                        })
+                                                        setScrambledWord(wordScrambleOptions)
+                                                    }}
+                                                    styles={{
+                                                        ...styles.backButton,
+                                                        backgroundColor: selectedQuiz?.type === '4' && selectedQuiz?.id === question.id ? '#FF7F50' : 'transparent',
+                                                        color: selectedQuiz?.type === '4' && selectedQuiz?.id === question.id ? 'white' : '#333',
+                                                    }}
+                                                />
+                                            )
+
+                                        case "5": // "Fill in the Blanks"
+                                            return (
+                                                <UIButton
+                                                    key={question.id}
+                                                    label="Fill in Blanks"
+                                                    onClick={() => setSelectedQuiz(question)}
+                                                    styles={{
+                                                        ...styles.backButton,
+                                                        backgroundColor: selectedQuiz?.type === '5' && selectedQuiz?.id === question.id ? '#FF7F50' : 'transparent',
+                                                        color: selectedQuiz?.type === '5' && selectedQuiz?.id === question.id ? 'white' : '#333',
+                                                    }}
+                                                />
+                                            )
+
+                                        default:
+                                            break;
+                                    }
+                                })
+                            }
+                            {/* <UIButton
                                 label="Multiple Choice"
                                 onClick={() => setCurrentQuizType('multiple')}
                                 styles={{
@@ -631,8 +706,8 @@ export default function LessonDetails() {
                                     backgroundColor: currentQuizType === 'multiple' ? '#FF7F50' : 'transparent',
                                     color: currentQuizType === 'multiple' ? 'white' : '#333',
                                 }}
-                            />
-                            <UIButton
+                            /> */}
+                            {/* <UIButton
                                 label="True/False"
                                 onClick={() => setCurrentQuizType('truefalse')}
                                 styles={{
@@ -667,14 +742,30 @@ export default function LessonDetails() {
                                     backgroundColor: currentQuizType === 'fillblanks' ? '#FF7F50' : 'transparent',
                                     color: currentQuizType === 'fillblanks' ? 'white' : '#333',
                                 }}
-                            />
+                            /> */}
+                            {/* <UIButton
+                                label="Fill in Blanks"
+                                onClick={() => setCurrentQuizType('fillblanks')}
+                                styles={{
+                                    ...styles.backButton,
+                                    backgroundColor: currentQuizType === 'fillblanks' ? '#FF7F50' : 'transparent',
+                                    color: currentQuizType === 'fillblanks' ? 'white' : '#333',
+                                }}
+                            /> */}
                         </div>
 
+                        {selectedQuiz?.type === '1' && multipleChoiceQuiz}
+                        {selectedQuiz?.type === '2' && trueFalseQuiz}
+                        {selectedQuiz?.type === '3' && orderingQuiz}
+                        {selectedQuiz?.type === '4' && wordScrambleQuiz}
+                        {selectedQuiz?.type === '5' && fillInBlanksQuiz}
+
+
+                        {/* 
                         {currentQuizType === 'multiple' && multipleChoiceQuiz}
-                        {currentQuizType === 'truefalse' && trueFalseQuiz}
                         {currentQuizType === 'ordering' && orderingQuiz}
                         {currentQuizType === 'scramble' && wordScrambleQuiz}
-                        {currentQuizType === 'fillblanks' && fillInBlanksQuiz}
+                        {currentQuizType === 'fillblanks' && fillInBlanksQuiz} */}
                     </div>
                 </Card>
             </div>
