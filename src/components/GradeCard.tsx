@@ -2,8 +2,6 @@ import React from 'react';
 
 const styles = {
     Card: {
-        top: '275px',
-        left: '72px',
         width: '300px',
         height: '350px',
         backgroundColor: '#ffffff',

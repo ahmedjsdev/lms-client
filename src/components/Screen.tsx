@@ -7,7 +7,7 @@ const styles = {
         width: '100vw',
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: '20px',
         flexWrap: 'wrap',
         padding: '20px',

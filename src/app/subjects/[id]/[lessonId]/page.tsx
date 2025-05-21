@@ -32,7 +32,10 @@ const styles = {
         justifyContent: 'flex-start',
         padding: '20px',
         backgroundColor: '#fff',
-        flexFlow: 'column'
+        flexFlow: 'column',
+    } as React.CSSProperties,
+    screenResponsive: {
+        height: '100%'
     } as React.CSSProperties,
     backButton: {
         padding: '8px 24px',
@@ -48,6 +51,12 @@ const styles = {
         display: 'flex',
         flexDirection: 'row',
         gap: '20px',
+
+    } as React.CSSProperties,
+    layoutResponsive: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
     } as React.CSSProperties,
     quizContainer: {
         display: 'flex',
@@ -218,6 +227,7 @@ export default function LessonDetails() {
     const [lessonQuestions, setLessonQuestions] = useState([]);
     const [selectedQuiz, setSelectedQuiz] = useState<null | Quiz>(null);
     const [showNoQuiz, setShowNoQuiz] = useState(false);
+    const [isResponsive, setIsResponsive] = useState(false);
     const [lessonDetails, setLessonDetails] = useState<null | {
         id: number;
         title: string;
@@ -282,6 +292,21 @@ export default function LessonDetails() {
         }
         fetchLessonData()
     }, [lessonId])
+
+    useEffect(() => {
+        window.addEventListener('resize', () => {
+            if (window.innerWidth < 992) {
+                setIsResponsive(true)
+            } else {
+                setIsResponsive(false)
+            }
+        })
+        if (window.innerWidth < 992) {
+            setIsResponsive(true)
+        } else {
+            setIsResponsive(false)
+        }
+    }, [])
 
     const multipleChoiceQuiz = (
         <div style={styles.quizContainer}>
@@ -578,13 +603,15 @@ export default function LessonDetails() {
 
 
     return (
-        <Screen styles={styles.Screen}>
-            <UIButton
-                label="Back"
-                styles={styles.backButton}
-            />
+        <Screen styles={{
+            ...styles.Screen,
+            ...(isResponsive ? styles.screenResponsive : {})
+        }}>
 
-            <div style={styles.layout}>
+            <div style={{
+                ...styles.layout,
+                ...(isResponsive ? styles.layoutResponsive : {})
+            }}>
                 <Card>
                     <UITitle text={lessonDetails?.title || ''} />
                     <UIText styles={{
