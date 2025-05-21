@@ -16,7 +16,7 @@ export default async function Home() {
   const gradeCards = (grades || []).map((grade: { id: string; name: string; }) => (
     <GradeCard key={grade.id}>
       <GradeImage image="https://assets.api.uizard.io/api/cdn/stream/5b6ed5cf-f90a-4186-8b5d-e4e2cd9bb5cb.png" />
-      <GradeTitle text={`Grade ${grade.name}`} />
+      <GradeTitle text={`${grade.name}`} />
       <Button label="Start" href={`/grade/${grade.id}`} />
     </GradeCard>
   ))
