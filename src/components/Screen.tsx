@@ -2,7 +2,7 @@ import React from 'react';
 
 const styles = {
     Screen: {
-        backgroundColor: '#add8e6',
+        backgroundColor: 'rgba(0,0,0, .1)',
         height: '100vh',
         width: '100vw',
         display: 'flex',

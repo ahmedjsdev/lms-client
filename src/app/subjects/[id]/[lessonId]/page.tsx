@@ -31,7 +31,7 @@ const styles = {
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
         padding: '20px',
-        backgroundColor: '#fff',
+        // backgroundColor: '#fff',
         flexFlow: 'column',
     } as React.CSSProperties,
     screenResponsive: {

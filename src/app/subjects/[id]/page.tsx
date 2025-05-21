@@ -14,7 +14,7 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'flex-start',
         gap: '20px',
-        backgroundColor: '#fff',
+        // backgroundColor: '#fff',
     },
     CardImage: {
         width: '65px',
